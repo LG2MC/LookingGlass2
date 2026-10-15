@@ -1,0 +1,28 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="GPL-3.0-only"
+issueTrackerURL="https://github.com/LG2MC/LookingGlass2/issues"
+[[mods]]
+modId="lookingglass2"
+version="${version}"
+displayName="LookingGlass 2"
+authors="LG2MC contributors"
+description='An unofficial continuation of LookingGlass. Development bootstrap only; remote rendering is not implemented.'
+[[dependencies.lookingglass2]]
+modId="forge"
+mandatory=true
+versionRange="[47.1,)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.lookingglass2]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1]"
+ordering="NONE"
+side="BOTH"
+[[dependencies.lookingglass2]]
+modId="architectury"
+mandatory=true
+versionRange="[9.2.14,10)"
+ordering="AFTER"
+side="BOTH"

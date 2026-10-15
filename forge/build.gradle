@@ -1,0 +1,36 @@
+plugins { id 'com.github.johnrengelman.shadow' }
+architectury {
+    platformSetupLoomIde()
+    forge()
+}
+configurations {
+    common
+    shadowCommon
+    compileClasspath.extendsFrom common
+    runtimeClasspath.extendsFrom common
+    developmentForge.extendsFrom common
+}
+dependencies {
+    forge "net.minecraftforge:forge:${rootProject.forge_version}"
+    modImplementation "dev.architectury:architectury-forge:${rootProject.architectury_version}"
+    common(project(path: ':common', configuration: 'namedElements')) { transitive = false }
+    shadowCommon(project(path: ':common', configuration: 'transformProductionForge')) { transitive = false }
+}
+processResources {
+    inputs.property 'version', project.version
+    filesMatching(['fabric.mod.json', 'META-INF/mods.toml']) {
+        expand(version: project.version)
+    }
+}
+shadowJar {
+    configurations = [project.configurations.shadowCommon]
+    archiveClassifier = 'dev-shadow'
+}
+remapJar {
+    dependsOn shadowJar
+    inputFile.set(shadowJar.archiveFile)
+    archiveFileName = "lookingglass2-${project.version}+1.20.1-forge.jar"
+}
+sourcesJar {
+    from project(':common').sourceSets.main.allSource
+}
