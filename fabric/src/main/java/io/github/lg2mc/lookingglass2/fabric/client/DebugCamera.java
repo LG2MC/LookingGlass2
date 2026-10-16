@@ -26,7 +26,9 @@ import java.nio.FloatBuffer;
 
 /** Limited block-model preview, not a replacement for Minecraft's full world renderer. */
 final class DebugCamera {
-    private static final int RADIUS = 12;
+    static final int MIN_RADIUS = 8;
+    static final int MAX_RADIUS = 32;
+    private static int radius = 24;
     private static final BufferBuilder OPAQUE = new BufferBuilder(1 << 20);
     private static final BufferBuilder TRANSLUCENT = new BufferBuilder(1 << 18);
     private static final RandomSource RANDOM = RandomSource.create(0);
@@ -47,6 +49,16 @@ final class DebugCamera {
         return true;
     }
 
+    static int radius() { return radius; }
+
+    static void setRadius(int blocks) {
+        if (blocks < MIN_RADIUS || blocks > MAX_RADIUS) {
+            throw new IllegalArgumentException("Camera radius must be between 8 and 32 blocks");
+        }
+        radius = blocks;
+        DebugDisplayTexture.requestCameraUpdate();
+    }
+
     static boolean active() { return position != null; }
 
     static void clear() {
@@ -61,7 +73,7 @@ final class DebugCamera {
         if (!active()) return "Color test mode. Use /lg2 camera to capture your eye position and direction.";
         return String.format(java.util.Locale.ROOT,
                 "Camera %.1f %.1f %.1f | yaw %.1f pitch %.1f | %d blocks | %.1f ms/update | radius %d | max 5 Hz",
-                position.x, position.y, position.z, yaw, pitch, drawnBlocks, renderMillis, RADIUS);
+                position.x, position.y, position.z, yaw, pitch, drawnBlocks, renderMillis, radius);
     }
 
     static void render(RenderTarget target, ClientLevel level) {
@@ -114,10 +126,10 @@ final class DebugCamera {
         BlockPos center = BlockPos.containing(position);
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         drawnBlocks = 0;
-        for (int y = Math.max(level.getMinBuildHeight(), center.getY() - RADIUS);
-             y <= Math.min(level.getMaxBuildHeight() - 1, center.getY() + RADIUS); y++) {
-            for (int z = center.getZ() - RADIUS; z <= center.getZ() + RADIUS; z++) {
-                for (int x = center.getX() - RADIUS; x <= center.getX() + RADIUS; x++) {
+        for (int y = Math.max(level.getMinBuildHeight(), center.getY() - radius);
+             y <= Math.min(level.getMaxBuildHeight() - 1, center.getY() + radius); y++) {
+            for (int z = center.getZ() - radius; z <= center.getZ() + radius; z++) {
+                for (int x = center.getX() - radius; x <= center.getX() + radius; x++) {
                     pos.set(x, y, z);
                     if (!level.hasChunkAt(pos)) continue; // Never request or load remote chunks.
                     BlockState block = level.getBlockState(pos);
