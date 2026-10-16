@@ -18,6 +18,7 @@ public final class DebugDisplayRenderer implements BlockEntityRenderer<DebugDisp
     @Override
     public void render(DebugDisplay.DisplayEntity display, float partialTick, PoseStack poses,
                        MultiBufferSource buffers, int light, int overlay) {
+        if (DebugCamera.rendering()) return; // Never sample the framebuffer currently being written.
         DebugDisplayTexture.touch();
         poses.pushPose();
         try {

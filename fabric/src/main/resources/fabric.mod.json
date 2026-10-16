@@ -3,7 +3,7 @@
   "id": "lookingglass2",
   "version": "${version}",
   "name": "LookingGlass 2",
-  "description": "An unofficial continuation of LookingGlass. Fabric debug display with a fixed nearby-terrain camera prototype; remote dimensions are not implemented.",
+  "description": "An unofficial continuation of LookingGlass. Experimental Fabric secondary world camera renderer.",
   "authors": [
     "LG2MC contributors"
   ],
@@ -27,5 +27,8 @@
     "java": ">=17",
     "fabric-api": ">=0.92.2",
     "architectury": ">=9.2.14 <10.0.0"
-  }
+  },
+  "mixins": [
+    "lookingglass2.client.mixins.json"
+  ]
 }

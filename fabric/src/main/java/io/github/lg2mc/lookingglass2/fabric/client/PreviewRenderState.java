@@ -11,6 +11,8 @@ import org.lwjgl.system.MemoryStack;
 
 /** Saves the state touched by the limited terrain pass. Vanilla rendering only. */
 final class PreviewRenderState implements AutoCloseable {
+    private final float[] clearColor = new float[4];
+    private final double clearDepth = GL11.glGetDouble(GL11.GL_DEPTH_CLEAR_VALUE);
     private final int draw = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
     private final int read = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
     private final int active = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
@@ -36,12 +38,17 @@ final class PreviewRenderState implements AutoCloseable {
     private final Matrix4f projection = new Matrix4f(RenderSystem.getProjectionMatrix());
     private final Matrix4f textureMatrix = new Matrix4f(RenderSystem.getTextureMatrix());
     private final VertexSorting sorting = RenderSystem.getVertexSorting();
+    private final com.mojang.blaze3d.shaders.FogShape fogShape = RenderSystem.getShaderFogShape();
+    private final float[] fogColor = RenderSystem.getShaderFogColor().clone();
     private final float fogStart = RenderSystem.getShaderFogStart();
     private final float fogEnd = RenderSystem.getShaderFogEnd();
     private final float[] color = RenderSystem.getShaderColor().clone();
 
     PreviewRenderState() {
         try (MemoryStack stack = MemoryStack.stackPush()) {
+            var clear = stack.mallocFloat(4);
+            GL11.glGetFloatv(GL11.GL_COLOR_CLEAR_VALUE, clear);
+            for (int i = 0; i < 4; i++) clearColor[i] = clear.get(i);
             var v = stack.mallocInt(4);
             GL11.glGetIntegerv(GL11.GL_VIEWPORT, v);
             var mask = stack.malloc(4);
@@ -74,6 +81,8 @@ final class PreviewRenderState implements AutoCloseable {
         RenderSystem.setTextureMatrix(textureMatrix);
         RenderSystem.setShader(() -> shader);
         GlStateManager._glUseProgram(program);
+        RenderSystem.setShaderFogShape(fogShape);
+        RenderSystem.setShaderFogColor(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
         RenderSystem.setShaderFogStart(fogStart);
         RenderSystem.setShaderFogEnd(fogEnd);
         RenderSystem.setShaderColor(color[0], color[1], color[2], color[3]);
@@ -83,6 +92,8 @@ final class PreviewRenderState implements AutoCloseable {
             GlStateManager._bindTexture(bindings[i]);
         }
         GlStateManager._activeTexture(active);
+        RenderSystem.clearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
+        RenderSystem.clearDepth(clearDepth);
         RenderSystem.colorMask(colorMask[0], colorMask[1], colorMask[2], colorMask[3]);
         RenderSystem.depthMask(depthMask);
         RenderSystem.depthFunc(depthFunc);

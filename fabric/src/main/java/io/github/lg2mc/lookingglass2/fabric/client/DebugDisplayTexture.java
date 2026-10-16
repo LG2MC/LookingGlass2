@@ -18,7 +18,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 /** Owns one shared 256x256 target. No PNG, CPU pixel upload, or public API yet. */
-final class DebugDisplayTexture {
+public final class DebugDisplayTexture {
     static final ResourceLocation ID = new ResourceLocation("lookingglass2", "debug/display_target");
     private static TextureTarget target;
     private static ClientLevel level;
@@ -30,8 +30,9 @@ final class DebugDisplayTexture {
 
     private DebugDisplayTexture() {}
 
-    static void beginFrame() {
+    public static void beginFrame() {
         RenderSystem.assertOnRenderThread();
+        if (DebugCamera.rendering()) return;
         ClientLevel current = Minecraft.getInstance().level;
         if (level != current) {
             release();
@@ -42,6 +43,7 @@ final class DebugDisplayTexture {
         // Two-frame grace period: queued block-entity vertices have been flushed before deletion.
         if (target != null && frame - lastSeen > 2) {
             release();
+            DebugCamera.disposeRenderer();
         }
         long now = Util.getMillis();
         if (target != null && current != null && DebugCamera.active()

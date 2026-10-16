@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "io.github.lg2mc.lookingglass2.fabric.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "GameRendererMixin",
+    "OptionsMixin",
+    "MinecraftMixin",
+    "LevelRendererMixin",
+    "LevelRendererAccess",
+    "ParticleEngineMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
