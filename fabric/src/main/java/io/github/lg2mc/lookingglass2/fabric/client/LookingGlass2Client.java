@@ -15,6 +15,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 public final class LookingGlass2Client implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        DebugCameraCommands.register();
         BlockEntityRenderers.register(DebugDisplay.ENTITY_TYPE, DebugDisplayRenderer::new);
         WorldRenderEvents.START.register(context -> DebugDisplayTexture.beginFrame());
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> DebugDisplayTexture.reset());

@@ -17,7 +17,7 @@ import org.lwjgl.system.MemoryStack;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
-/** Owns one shared 64x64 target. No PNG, CPU pixel upload, or public API yet. */
+/** Owns one shared 256x256 target. No PNG, CPU pixel upload, or public API yet. */
 final class DebugDisplayTexture {
     static final ResourceLocation ID = new ResourceLocation("lookingglass2", "debug/display_target");
     private static TextureTarget target;
@@ -26,6 +26,7 @@ final class DebugDisplayTexture {
     private static long lastSeen = -1;
     private static long lastUpdated = -1;
     private static long started;
+    private static long lastCameraUpdate = -1;
 
     private DebugDisplayTexture() {}
 
@@ -34,6 +35,7 @@ final class DebugDisplayTexture {
         ClientLevel current = Minecraft.getInstance().level;
         if (level != current) {
             release();
+            DebugCamera.clear();
             level = current;
         }
         frame++;
@@ -41,12 +43,31 @@ final class DebugDisplayTexture {
         if (target != null && frame - lastSeen > 2) {
             release();
         }
+        long now = Util.getMillis();
+        if (target != null && current != null && DebugCamera.active()
+                && (lastCameraUpdate < 0 || now - lastCameraUpdate >= 200)) {
+            try {
+                DebugCamera.render(target, current);
+                lastCameraUpdate = now;
+            } catch (RuntimeException failure) {
+                LookingGlass2.LOGGER.error("Terrain camera failed; returning to color test", failure);
+                DebugCamera.clear();
+                if (Minecraft.getInstance().player != null) {
+                    Minecraft.getInstance().player.displayClientMessage(
+                            net.minecraft.network.chat.Component.literal("LG2 camera failed. See latest.log; color test restored."), false);
+                }
+            }
+        }
+    }
+
+    static void requestCameraUpdate() {
+        lastCameraUpdate = -1;
     }
 
     static void touch() {
         RenderSystem.assertOnRenderThread();
         lastSeen = frame;
-        if (lastUpdated == frame && target != null) return;
+        if (target != null && (DebugCamera.active() || lastUpdated == frame)) return;
 
         // RenderTarget allocation/clear changes GL state. Restore the caller's actual targets,
         // viewport, texture binding, and clear color even when initialization fails.
@@ -58,13 +79,15 @@ final class DebugDisplayTexture {
             int draw = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
             int read = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
             int texture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+            boolean depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
+            double clearDepth = GL11.glGetDouble(GL11.GL_DEPTH_CLEAR_VALUE);
             boolean scissor = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
             try {
                 if (target == null) {
-                    target = new TextureTarget(64, 64, false, Minecraft.ON_OSX);
+                    target = new TextureTarget(256, 256, true, Minecraft.ON_OSX);
                     Minecraft.getInstance().getTextureManager().register(ID, new BorrowedTexture());
                     started = Util.getMillis();
-                    LookingGlass2.LOGGER.info("Debug display target allocated (64x64, shared)");
+                    LookingGlass2.LOGGER.info("Debug display target allocated (256x256, shared)");
                 }
                 float seconds = (Util.getMillis() - started) / 1000.0F;
                 float green = seconds < 2.0F ? 0.0F
@@ -91,6 +114,8 @@ final class DebugDisplayTexture {
                 GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, read);
                 RenderSystem.viewport(viewport.get(0), viewport.get(1), viewport.get(2), viewport.get(3));
                 GlStateManager._bindTexture(texture);
+                RenderSystem.depthMask(depthMask);
+                RenderSystem.clearDepth(clearDepth);
                 RenderSystem.clearColor(clearColor.get(0), clearColor.get(1), clearColor.get(2), clearColor.get(3));
                 if (scissor) GlStateManager._enableScissorTest();
             }
@@ -103,6 +128,7 @@ final class DebugDisplayTexture {
             return;
         }
         release();
+        DebugCamera.clear();
         level = null;
     }
 
@@ -128,6 +154,7 @@ final class DebugDisplayTexture {
         }
         lastSeen = -1;
         lastUpdated = -1;
+        lastCameraUpdate = -1;
     }
 
     /** TextureManager can reference this attachment, but only TextureTarget owns its GL allocation. */

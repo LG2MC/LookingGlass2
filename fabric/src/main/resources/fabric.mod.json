@@ -3,7 +3,7 @@
   "id": "lookingglass2",
   "version": "${version}",
   "name": "LookingGlass 2",
-  "description": "An unofficial continuation of LookingGlass. Includes a Fabric debug display rendering test; remote world rendering is not implemented.",
+  "description": "An unofficial continuation of LookingGlass. Fabric debug display with a fixed nearby-terrain camera prototype; remote dimensions are not implemented.",
   "authors": [
     "LG2MC contributors"
   ],
