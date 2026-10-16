@@ -7,5 +7,6 @@ public final class LookingGlass2Fabric implements ModInitializer {
     @Override
     public void onInitialize() {
         LookingGlass2.init();
+        io.github.lg2mc.lookingglass2.fabric.debug.DebugDisplay.register();
     }
 }

@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "lookingglass2:block/debug_display",
+      "y": 0
+    },
+    "facing=east": {
+      "model": "lookingglass2:block/debug_display",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "lookingglass2:block/debug_display",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "lookingglass2:block/debug_display",
+      "y": 270
+    }
+  }
+}

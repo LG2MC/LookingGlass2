@@ -3,7 +3,7 @@
   "id": "lookingglass2",
   "version": "${version}",
   "name": "LookingGlass 2",
-  "description": "An unofficial continuation of LookingGlass. Development bootstrap only; remote rendering is not implemented.",
+  "description": "An unofficial continuation of LookingGlass. Includes a Fabric debug display rendering test; remote world rendering is not implemented.",
   "authors": [
     "LG2MC contributors"
   ],
@@ -16,6 +16,9 @@
   "entrypoints": {
     "main": [
       "io.github.lg2mc.lookingglass2.fabric.LookingGlass2Fabric"
+    ],
+    "client": [
+      "io.github.lg2mc.lookingglass2.fabric.client.LookingGlass2Client"
     ]
   },
   "depends": {
