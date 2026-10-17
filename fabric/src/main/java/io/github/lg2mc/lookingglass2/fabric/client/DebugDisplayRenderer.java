@@ -34,11 +34,12 @@ public final class DebugDisplayRenderer implements BlockEntityRenderer<DebugDisp
             poses.translate(-0.5, -0.5, -0.5);
             VertexConsumer vertices = buffers.getBuffer(RenderType.entitySolid(DebugDisplayTexture.ID));
             PoseStack.Pose pose = poses.last();
-            // Clockwise when viewed from inside; outward normal points north (-Z).
-            vertex(vertices, pose, 0.125F, 0.125F, 0.0F, 0.0F);
-            vertex(vertices, pose, 0.125F, 0.875F, 0.0F, 1.0F);
-            vertex(vertices, pose, 0.875F, 0.875F, 1.0F, 1.0F);
-            vertex(vertices, pose, 0.875F, 0.125F, 1.0F, 0.0F);
+            // On the north face, local +X is screen-left when viewed from outside.
+            // Flip U so the framebuffer reads left-to-right; V=1 remains at the top.
+            vertex(vertices, pose, 0.125F, 0.125F, 1.0F, 0.0F);
+            vertex(vertices, pose, 0.125F, 0.875F, 1.0F, 1.0F);
+            vertex(vertices, pose, 0.875F, 0.875F, 0.0F, 1.0F);
+            vertex(vertices, pose, 0.875F, 0.125F, 0.0F, 0.0F);
         } finally {
             poses.popPose();
         }
