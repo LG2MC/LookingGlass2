@@ -26,7 +26,6 @@ public final class DebugCamera {
     private static boolean rendering;
     private static RenderTarget output;
     private static int effectiveDistance;
-    private static double renderMillis;
 
     private DebugCamera() {}
     static boolean capture() {
@@ -47,8 +46,8 @@ public final class DebugCamera {
 
     static void clear() {
         position = null;
+        DebugDisplayTexture.requestCameraUpdate();
         disposeRenderer();
-        renderMillis = 0;
     }
     static void disposeRenderer() {
         if (renderer != null) {
@@ -76,8 +75,8 @@ public final class DebugCamera {
                 + " chunks, FOV=" + (settings.fovDegrees() == 0 ? "player" : settings.fovDegrees())
                 + ", particles=" + settings.particles();
         return (!active() ? "Color mode | " : String.format(java.util.Locale.ROOT,
-                "Camera %.1f %.1f %.1f | %.1f ms/update | ", position.x, position.y, position.z, renderMillis))
-                + options + (renderer == null ? "" : " | " + renderer.getChunkStatistics());
+                "Camera %.1f %.1f %.1f | ", position.x, position.y, position.z))
+                + options + " | target " + settings.updateFps() + " FPS | " + DebugDisplayTexture.performance() + (renderer == null ? "" : " | " + renderer.getChunkStatistics());
     }
     static void render(RenderTarget target, ClientLevel level) {
         Minecraft mc = Minecraft.getInstance();
@@ -88,7 +87,6 @@ public final class DebugCamera {
         float partial = mc.getFrameTime();
         CAMERA.place(level, position, yaw, pitch, partial);
         Camera previousCamera = mc.gameRenderer.getMainCamera();
-        long start = System.nanoTime();
         // Run before the main world pass, not from inside its world-render callbacks.
         try (PreviewRenderState state = new PreviewRenderState()) {
             rendering = true; output = target;
@@ -127,7 +125,6 @@ public final class DebugCamera {
             rendering = false; output = null;
             mc.getEntityRenderDispatcher().prepare(mc.level, previousCamera, mc.crosshairPickEntity);
             mc.getBlockEntityRenderDispatcher().prepare(mc.level, previousCamera, mc.hitResult);
-            renderMillis = (System.nanoTime() - start) / 1_000_000.0;
         }
     }
     private static final class FixedCamera extends Camera {

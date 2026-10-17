@@ -20,6 +20,19 @@ final class DebugCameraCommands {
                     context.getSource().sendFeedback(Component.literal("Fixed world camera captured. Terrain may take a few updates to compile."));
                     return 1;
                 }))
+                .then(literal("fps")
+                    .executes(context -> {
+                        context.getSource().sendFeedback(Component.literal("Camera target: " + DebugCamera.settings().updateFps()
+                                + " FPS. Use /lg2 fps <1-60>. Actual updates depend on game FPS and render cost."));
+                        return 1;
+                    })
+                    .then(argument("rate", integer(1, 60)).executes(context -> {
+                        CameraSettings s = DebugCamera.settings();
+                        int value = getInteger(context, "rate");
+                        DebugCamera.configure(new CameraSettings(s.distanceChunks(), s.fovDegrees(), s.particles(), value));
+                        context.getSource().sendFeedback(Component.literal("Camera target set to " + value + " FPS."));
+                        return 1;
+                    })))
                 .then(literal("distance")
                     .executes(context -> {
                         context.getSource().sendFeedback(Component.literal("Use /lg2 distance <2-8> (chunks), or /lg2 distance player."));
@@ -27,35 +40,35 @@ final class DebugCameraCommands {
                     })
                     .then(literal("player").executes(context -> {
                         CameraSettings s = DebugCamera.settings();
-                        DebugCamera.configure(new CameraSettings(0, s.fovDegrees(), s.particles()));
+                        DebugCamera.configure(new CameraSettings(0, s.fovDegrees(), s.particles(), s.updateFps()));
                         context.getSource().sendFeedback(Component.literal("Camera distance follows the player setting, capped at 8 chunks for this prototype."));
                         return 1;
                     }))
                     .then(argument("chunks", integer(2, 8)).executes(context -> {
                         CameraSettings s = DebugCamera.settings();
                         int value = getInteger(context, "chunks");
-                        DebugCamera.configure(new CameraSettings(value, s.fovDegrees(), s.particles()));
+                        DebugCamera.configure(new CameraSettings(value, s.fovDegrees(), s.particles(), s.updateFps()));
                         context.getSource().sendFeedback(Component.literal("Camera distance: " + value + " chunks. Already-loaded terrain only."));
                         return 1;
                     })))
                 .then(literal("fov")
                     .then(literal("player").executes(context -> {
                         CameraSettings s = DebugCamera.settings();
-                        DebugCamera.configure(new CameraSettings(s.distanceChunks(), 0, s.particles()));
+                        DebugCamera.configure(new CameraSettings(s.distanceChunks(), 0, s.particles(), s.updateFps()));
                         context.getSource().sendFeedback(Component.literal("Camera FOV follows your FOV setting."));
                         return 1;
                     }))
                     .then(argument("degrees", integer(30, 110)).executes(context -> {
                         CameraSettings s = DebugCamera.settings();
                         int value = getInteger(context, "degrees");
-                        DebugCamera.configure(new CameraSettings(s.distanceChunks(), value, s.particles()));
+                        DebugCamera.configure(new CameraSettings(s.distanceChunks(), value, s.particles(), s.updateFps()));
                         context.getSource().sendFeedback(Component.literal("Camera FOV: " + value + " degrees."));
                         return 1;
                     })))
                 .then(literal("particles").then(argument("enabled", bool()).executes(context -> {
                     CameraSettings s = DebugCamera.settings();
                     boolean value = getBool(context, "enabled");
-                    DebugCamera.configure(new CameraSettings(s.distanceChunks(), s.fovDegrees(), value));
+                    DebugCamera.configure(new CameraSettings(s.distanceChunks(), s.fovDegrees(), value, s.updateFps()));
                     context.getSource().sendFeedback(Component.literal("Camera particles: " + value));
                     return 1;
                 })))
