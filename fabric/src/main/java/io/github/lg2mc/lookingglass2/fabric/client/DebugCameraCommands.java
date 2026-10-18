@@ -2,6 +2,11 @@ package io.github.lg2mc.lookingglass2.fabric.client;
 
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.network.chat.Component;
+import io.github.lg2mc.lookingglass2.api.client.CameraSettings;
+import static com.mojang.brigadier.arguments.StringArgumentType.word;
+import static com.mojang.brigadier.arguments.StringArgumentType.getString;
+import static com.mojang.brigadier.arguments.FloatArgumentType.floatArg;
+import static com.mojang.brigadier.arguments.FloatArgumentType.getFloat;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
@@ -16,10 +21,56 @@ final class DebugCameraCommands {
             dispatcher.register(literal("lg2")
                 .then(literal("camera").executes(context -> {
                     if (!DebugCamera.capture()) return 0;
-                    DebugDisplayTexture.requestCameraUpdate();
                     context.getSource().sendFeedback(Component.literal("Fixed world camera captured. Terrain may take a few updates to compile."));
                     return 1;
+                }).then(argument("name", word()).executes(context -> {
+                    String name = getString(context, "name");
+                    if (!DebugCamera.capture(name)) return 0;
+                    context.getSource().sendFeedback(Component.literal("Captured and selected camera: " + name));
+                    return 1;
+                })))
+                .then(literal("use").then(argument("name", word()).executes(context -> {
+                    String name = getString(context, "name");
+                    if (!DebugCamera.use(name)) {
+                        context.getSource().sendError(Component.literal("Unknown camera: " + name)); return 0;
+                    }
+                    context.getSource().sendFeedback(Component.literal("Unbound displays now show: " + name)); return 1;
+                })))
+                .then(literal("bind").then(argument("name", word()).executes(context -> {
+                    if (!DebugCamera.bind(getString(context, "name"))) {
+                        context.getSource().sendError(Component.literal("Look at a debug display and use an existing camera name.")); return 0;
+                    }
+                    context.getSource().sendFeedback(Component.literal("Display bound. Binding is client-only for this session.")); return 1;
+                })))
+                .then(literal("unbind").executes(context -> {
+                    if (!DebugCamera.unbind()) { context.getSource().sendError(Component.literal("Look at a bound debug display.")); return 0; }
+                    context.getSource().sendFeedback(Component.literal("Display follows the selected camera again.")); return 1;
                 }))
+                .then(literal("remove").then(argument("name", word()).executes(context -> {
+                    if (!DebugCamera.remove(getString(context, "name"))) { context.getSource().sendError(Component.literal("Unknown camera.")); return 0; }
+                    context.getSource().sendFeedback(Component.literal("Camera closed and resources released.")); return 1;
+                })))
+                .then(literal("list").executes(context -> {
+                    context.getSource().sendFeedback(Component.literal(DebugCamera.list())); return 1;
+                }))
+                .then(literal("enabled").then(argument("enabled", bool()).executes(context -> {
+                    var view = DebugCamera.selected();
+                    if (view == null) { context.getSource().sendError(Component.literal("Capture a camera first.")); return 0; }
+                    boolean value = getBool(context, "enabled");
+                    view.setEnabled(value);
+                    context.getSource().sendFeedback(Component.literal("Selected camera enabled: " + value)); return 1;
+                })))
+                .then(literal("movehere").executes(context -> {
+                    if (!DebugCamera.moveHere()) { context.getSource().sendError(Component.literal("Capture a camera first.")); return 0; }
+                    context.getSource().sendFeedback(Component.literal("Selected camera moved to your eye position; rotation kept.")); return 1;
+                }))
+                .then(literal("rotate").then(argument("yaw", floatArg(-360, 360))
+                    .then(argument("pitch", floatArg(-90, 90)).executes(context -> {
+                        if (!DebugCamera.rotate(getFloat(context, "yaw"), getFloat(context, "pitch"))) {
+                            context.getSource().sendError(Component.literal("Capture a camera first.")); return 0;
+                        }
+                        context.getSource().sendFeedback(Component.literal("Selected camera rotation updated.")); return 1;
+                    }))))
                 .then(literal("fps")
                     .executes(context -> {
                         context.getSource().sendFeedback(Component.literal("Camera target: " + DebugCamera.settings().updateFps()

@@ -1,12 +1,2 @@
 package io.github.lg2mc.lookingglass2.fabric.client;
-
-/** Per-view options. Zero distance/FOV inherit the player's settings. Not a stable API yet. */
-public record CameraSettings(int distanceChunks, int fovDegrees, boolean particles, int updateFps) {
-    public static final CameraSettings DEFAULT = new CameraSettings(0, 0, true, 20);
-
-    public CameraSettings {
-        if (updateFps < 1 || updateFps > 60) throw new IllegalArgumentException("Update rate must be 1–60 FPS");
-        if (distanceChunks != 0 && (distanceChunks < 2 || distanceChunks > 8)) throw new IllegalArgumentException("Distance must be 0 or 2–8 chunks");
-        if (fovDegrees != 0 && (fovDegrees < 30 || fovDegrees > 110)) throw new IllegalArgumentException("FOV must be 0 or 30–110 degrees");
-    }
-}
+// CameraSettings moved to io.github.lg2mc.lookingglass2.api.client.

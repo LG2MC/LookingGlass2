@@ -17,7 +17,7 @@ import org.lwjgl.system.MemoryStack;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
-/** Owns one shared 256x256 target. No PNG, CPU pixel upload, or public API yet. */
+/** Shared blue/cyan fallback for the development display only. Camera views own separate targets. */
 public final class DebugDisplayTexture {
     static final ResourceLocation ID = new ResourceLocation("lookingglass2", "debug/display_target");
     private static TextureTarget target;
@@ -26,30 +26,11 @@ public final class DebugDisplayTexture {
     private static long lastSeen = -1;
     private static long lastUpdated = -1;
     private static long started;
-    private static long nextCameraUpdate = -1;
-    private static final long[] updateTimes = new long[60];
-    private static final double[] updateCosts = new double[60];
-    private static int sampleCount, sampleCursor;
-
-    static String performance() {
-        if (sampleCount == 0) return "awaiting visible camera updates";
-        double total = 0, peak = 0;
-        for (int i = 0; i < sampleCount; i++) {
-            total += updateCosts[i]; peak = Math.max(peak, updateCosts[i]);
-        }
-        int oldest = sampleCount < updateTimes.length ? 0 : sampleCursor;
-        int newest = (sampleCursor + updateTimes.length - 1) % updateTimes.length;
-        long elapsed = updateTimes[newest] - updateTimes[oldest];
-        double actual = sampleCount > 1 && elapsed > 0 ? (sampleCount - 1) * 1_000_000_000.0 / elapsed : 0;
-        return String.format(java.util.Locale.ROOT, "%.1f actual FPS | CPU %.2f avg / %.2f max ms/update (%d samples)",
-                actual, total / sampleCount, peak, sampleCount);
-    }
-
     private DebugDisplayTexture() {}
 
     public static void beginFrame() {
         RenderSystem.assertOnRenderThread();
-        if (DebugCamera.rendering()) return;
+        if (CameraViews.rendering()) return;
         ClientLevel current = Minecraft.getInstance().level;
         if (level != current) {
             release();
@@ -60,45 +41,13 @@ public final class DebugDisplayTexture {
         // Two-frame grace period: queued block-entity vertices have been flushed before deletion.
         if (target != null && frame - lastSeen > 2) {
             release();
-            DebugCamera.disposeRenderer();
         }
-        long now = System.nanoTime();
-        if (target != null && current != null && DebugCamera.active()
-                && (nextCameraUpdate < 0 || now >= nextCameraUpdate)) {
-            try {
-                DebugCamera.render(target, current);
-                long finished = System.nanoTime();
-                updateTimes[sampleCursor] = now;
-                updateCosts[sampleCursor] = (finished - now) / 1_000_000.0;
-                sampleCursor = (sampleCursor + 1) % updateTimes.length;
-                sampleCount = Math.min(sampleCount + 1, updateTimes.length);
-                long interval = 1_000_000_000L / DebugCamera.settings().updateFps();
-                // Keep a steady schedule; skip missed deadlines instead of doing catch-up renders.
-                if (nextCameraUpdate < 0) nextCameraUpdate = now;
-                nextCameraUpdate += interval;
-                if (nextCameraUpdate <= finished) {
-                    nextCameraUpdate += ((finished - nextCameraUpdate) / interval + 1) * interval;
-                }
-            } catch (RuntimeException failure) {
-                LookingGlass2.LOGGER.error("Terrain camera failed; returning to color test", failure);
-                DebugCamera.clear();
-                if (Minecraft.getInstance().player != null) {
-                    Minecraft.getInstance().player.displayClientMessage(
-                            net.minecraft.network.chat.Component.literal("LG2 camera failed. See latest.log; color test restored."), false);
-                }
-            }
-        }
-    }
-
-    static void requestCameraUpdate() {
-        nextCameraUpdate = -1;
-        sampleCount = sampleCursor = 0;
     }
 
     static void touch() {
         RenderSystem.assertOnRenderThread();
         lastSeen = frame;
-        if (target != null && (DebugCamera.active() || lastUpdated == frame)) return;
+        if (target != null && (lastUpdated == frame)) return;
 
         // RenderTarget allocation/clear changes GL state. Restore the caller's actual targets,
         // viewport, texture binding, and clear color even when initialization fails.
@@ -158,6 +107,7 @@ public final class DebugDisplayTexture {
             RenderSystem.recordRenderCall(DebugDisplayTexture::reset);
             return;
         }
+        CameraViews.reset();
         release();
         DebugCamera.clear();
         level = null;
@@ -185,8 +135,6 @@ public final class DebugDisplayTexture {
         }
         lastSeen = -1;
         lastUpdated = -1;
-        nextCameraUpdate = -1;
-        sampleCount = sampleCursor = 0;
     }
 
     /** TextureManager can reference this attachment, but only TextureTarget owns its GL allocation. */

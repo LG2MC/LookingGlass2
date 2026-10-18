@@ -3,7 +3,7 @@
   "id": "lookingglass2",
   "version": "${version}",
   "name": "LookingGlass 2",
-  "description": "An unofficial continuation of LookingGlass. Experimental Fabric secondary world camera renderer.",
+  "description": "An unofficial continuation of LookingGlass. Experimental Fabric camera-view API and development displays.",
   "authors": [
     "LG2MC contributors"
   ],

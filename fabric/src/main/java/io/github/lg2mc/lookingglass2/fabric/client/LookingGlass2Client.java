@@ -17,7 +17,7 @@ public final class LookingGlass2Client implements ClientModInitializer {
     public void onInitializeClient() {
         DebugCameraCommands.register();
         BlockEntityRenderers.register(DebugDisplay.ENTITY_TYPE, DebugDisplayRenderer::new);
-        ClientTickEvents.END_CLIENT_TICK.register(client -> DebugCamera.tick());
+        ClientTickEvents.END_CLIENT_TICK.register(client -> CameraViews.tick());
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> DebugDisplayTexture.reset());
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> DebugDisplayTexture.reset());
         ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(

@@ -1,6 +1,9 @@
 package io.github.lg2mc.lookingglass2.fabric.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import io.github.lg2mc.lookingglass2.api.client.CameraView;
+import io.github.lg2mc.lookingglass2.api.client.LookingGlassClient;
+import net.minecraft.resources.ResourceLocation;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import io.github.lg2mc.lookingglass2.fabric.debug.DebugDisplay;
@@ -18,8 +21,11 @@ public final class DebugDisplayRenderer implements BlockEntityRenderer<DebugDisp
     @Override
     public void render(DebugDisplay.DisplayEntity display, float partialTick, PoseStack poses,
                        MultiBufferSource buffers, int light, int overlay) {
-        if (DebugCamera.rendering()) return; // Never sample the framebuffer currently being written.
-        DebugDisplayTexture.touch();
+        if (LookingGlassClient.isRenderingView()) return;
+        CameraView view = DebugCamera.viewFor(display.getBlockPos());
+        ResourceLocation texture;
+        if (view != null && view.failure().isEmpty()) texture = view.texture();
+        else { DebugDisplayTexture.touch(); texture = DebugDisplayTexture.ID; }
         poses.pushPose();
         try {
             Direction facing = display.getBlockState().getValue(DebugDisplay.DisplayBlock.FACING);
@@ -32,7 +38,7 @@ public final class DebugDisplayRenderer implements BlockEntityRenderer<DebugDisp
             };
             poses.mulPose(Axis.YP.rotationDegrees(rotation));
             poses.translate(-0.5, -0.5, -0.5);
-            VertexConsumer vertices = buffers.getBuffer(RenderType.entitySolid(DebugDisplayTexture.ID));
+            VertexConsumer vertices = buffers.getBuffer(RenderType.entitySolid(texture));
             PoseStack.Pose pose = poses.last();
             // On the north face, local +X is screen-left when viewed from outside.
             // Flip U so the framebuffer reads left-to-right; V=1 remains at the top.
